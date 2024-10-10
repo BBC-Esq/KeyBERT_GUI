@@ -3,7 +3,7 @@
 ```
 python -m venv .
 ```
-### 2. Activate Virtual Environment
+#### 2. Activate Virtual Environment
 ```
 .\Scripts\activate
 ```
