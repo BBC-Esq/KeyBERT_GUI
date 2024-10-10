@@ -33,6 +33,10 @@ Only run this command if using a CUDA version of Torch above.
 ```
 pip install nvidia-cublas-cu12==12.1.3.1 nvidia-cuda-nvrtc-cu12==12.1.105 nvidia-cuda-runtime-cu12==12.1.105 nvidia-cudnn-cu12==8.9.7.29 --no-deps
 ```
+#### 5. Install Pyside 6
+```
+pip install pyside6
+```
 #### 6. Install Other Dependencies
 ```
 pip install --no-deps -r requirements.txt
