@@ -11,22 +11,39 @@ def is_nvidia_gpu_available():
 
 if is_nvidia_gpu_available():
     from pathlib import Path
-    
+
     def set_cuda_paths():
+        from pathlib import Path
+        
         venv_base = Path(sys.executable).parent.parent
         nvidia_base_path = venv_base / 'Lib' / 'site-packages' / 'nvidia'
-        cuda_path = nvidia_base_path / 'cuda_runtime' / 'bin'
+        cuda_path_runtime = nvidia_base_path / 'cuda_runtime' / 'bin'
+        cuda_path_runtime_lib = nvidia_base_path / 'cuda_runtime' / 'lib' / 'x64'
+        cuda_path_runtime_include = nvidia_base_path / 'cuda_runtime' / 'include'
         cublas_path = nvidia_base_path / 'cublas' / 'bin'
         cudnn_path = nvidia_base_path / 'cudnn' / 'bin'
-        paths_to_add = [str(cuda_path), str(cublas_path), str(cudnn_path)]
-        env_vars = ['CUDA_PATH', 'CUDA_PATH_V12_1', 'PATH']
-        
-        for env_var in env_vars:
-            current_value = os.environ.get(env_var, '')
-            new_value = os.pathsep.join(paths_to_add + [current_value] if current_value else paths_to_add)
-            os.environ[env_var] = new_value
-    
-    set_cuda_paths()
+        nvrtc_path = nvidia_base_path / 'cuda_nvrtc' / 'bin'
+        nvcc_path = nvidia_base_path / 'cuda_nvcc' / 'bin'
+        paths_to_add = [
+            str(cuda_path_runtime),
+            str(cuda_path_runtime_lib),
+            str(cuda_path_runtime_include),
+            str(cublas_path),
+            str(cudnn_path),
+            str(nvrtc_path),
+            str(nvcc_path),
+        ]
+        current_value = os.environ.get('PATH', '')
+        new_value = os.pathsep.join(paths_to_add + ([current_value] if current_value else []))
+        os.environ['PATH'] = new_value
+
+        triton_cuda_path = nvidia_base_path / 'cuda_runtime'
+        current_cuda_path = os.environ.get('CUDA_PATH', '')
+        new_cuda_path = os.pathsep.join([str(triton_cuda_path)] + ([current_cuda_path] if current_cuda_path else []))
+        os.environ['CUDA_PATH'] = new_cuda_path
+
+        set_cuda_paths()
+
 
 from PySide6.QtWidgets import (
     QApplication, QWidget, QMainWindow, QLabel, QPushButton, QTextEdit, QFileDialog,
@@ -39,7 +56,7 @@ from keybert import KeyBERT
 from sentence_transformers import SentenceTransformer
 import torch
 
-# Worker Class
+
 class KeywordExtractorWorker(QThread):
     result = Signal(list)
     error = Signal(str)
