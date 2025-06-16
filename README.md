@@ -1,3 +1,5 @@
+# Graphical user interface that easily lets you use the [KeyBERT](https://github.com/MaartenGr/KeyBERT/) library.
+
 # Installation
 #### 1. Create Virtual Environment
 ```
