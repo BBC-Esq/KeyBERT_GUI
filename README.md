@@ -17,5 +17,5 @@ python setup_windows.py
 # Usage
 Navigate to the directory and activate the virtual environment, then run:
 ```
-python keybert_pyside.py
+python main_gui.py
 ```
