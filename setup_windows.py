@@ -106,6 +106,7 @@ libs = [
     "idna==3.10",
     "Jinja2==3.1.6",
     "joblib==1.5.1",
+    "keybert==0.8.5",
     "langcodes==3.4.1",
     "language_data==1.2.0",
     "marisa-trie==1.2.0",
@@ -129,9 +130,11 @@ libs = [
     "safetensors==0.5.3",
     "scikit-learn==1.7.0",
     "scipy==1.15.3",
+    "sentence-transformers==4.1.0",
     "shellingham==1.5.4",
     "shiboken6==6.7.3",
     "smart-open==7.0.5",
+    "spacy==3.7.5",
     "spacy-legacy==3.0.12",
     "spacy-loggers==1.0.5",
     "srsly==2.4.8",
@@ -150,10 +153,8 @@ libs = [
 ]
 
 full_install_libs = [
-    "keybert==0.8.5",
-    "sentence-transformers==4.1.0",
-    "spacy==3.7.5",
-    "PySide6==6.9.1"
+    "PyMuPDF",
+    "PySide6"
 ]
 
 
