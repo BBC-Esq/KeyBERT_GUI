@@ -18,5 +18,5 @@ python setup_windows.py
 # Usage
 Navigate to the directory and activate the virtual environment, then run:
 ```
-python main_gui.py
+python main.py
 ```
