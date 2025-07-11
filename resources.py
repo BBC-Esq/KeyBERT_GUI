@@ -29,4 +29,15 @@ TOOLTIPS: dict[str, str] = {
     "top_n_label": "Number of keywords to return",
     "top_n_spinbox": "top_n (must be ≥ 1)",
     "default_keybert_checkbox": "Skip embeddings and use KeyBERT in zero-shot mode",
+    
+    # Batch processing tooltips
+    "batch_toggle_button": "Show/hide batch processing options",
+    "batch_directory_button": "Select a directory containing documents to process",
+    "batch_directory_label": "Directory containing .txt, .pdf, and .docx files",
+    "batch_output_button": "Choose where to save the batch processing results (JSON file)",
+    "batch_output_label": "JSON file where results will be saved",
+    "batch_process_button": "Process all supported files in the selected directory",
+    "batch_progress_bar": "Shows progress of batch processing operation",
+    "batch_file_count_label": "Number and types of files found in directory",
+    "batch_cancel_button": "Cancel the current batch processing operation",
 }
