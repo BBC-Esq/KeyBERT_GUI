@@ -2,7 +2,7 @@ from pathlib import Path
 import sys
 import os
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QThread
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QFileDialog, QDoubleSpinBox, QGridLayout,
     QGroupBox, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton,
