@@ -1,6 +1,3 @@
-"""
-JSON output formatting utilities for batch processing results.
-"""
 from __future__ import annotations
 
 import json
@@ -10,8 +7,7 @@ from typing import Any
 
 
 class BatchResultFormatter:
-    """Handles formatting and saving batch processing results to JSON."""
-    
+
     def __init__(self) -> None:
         self.results: list[dict[str, Any]] = []
         self.metadata = {
@@ -21,7 +17,7 @@ class BatchResultFormatter:
             "failed_extractions": 0,
             "processing_parameters": {}
         }
-    
+
     def add_result(
         self,
         file_path: Path,
@@ -29,15 +25,6 @@ class BatchResultFormatter:
         keywords: list[tuple[str, float]] | None = None,
         error: str | None = None
     ) -> None:
-        """
-        Add a processing result for a single file.
-        
-        Args:
-            file_path: Path to the processed file
-            extracted_text: Extracted text content (None if extraction failed)
-            keywords: List of (keyword, score) tuples (None if extraction failed)
-            error: Error message if processing failed
-        """
         result = {
             "file_path": str(file_path),
             "file_name": file_path.name,
@@ -48,7 +35,7 @@ class BatchResultFormatter:
             "error": error,
             "processed_at": datetime.now().isoformat()
         }
-        
+
         self.results.append(result)
         self.metadata["total_files_processed"] += 1
         
@@ -56,36 +43,25 @@ class BatchResultFormatter:
             self.metadata["successful_extractions"] += 1
         else:
             self.metadata["failed_extractions"] += 1
-    
+
     def set_processing_parameters(self, params: dict[str, Any]) -> None:
-        """Store the processing parameters used."""
         self.metadata["processing_parameters"] = params.copy()
-    
+
     def save_to_file(self, output_path: str | Path) -> None:
-        """
-        Save results to JSON file.
-        
-        Args:
-            output_path: Path where to save the JSON file
-            
-        Raises:
-            IOError: If file cannot be written
-        """
         output_data = {
             "metadata": self.metadata,
             "results": self.results
         }
-        
+
         output_path = Path(output_path)
-        
+
         try:
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(output_data, f, indent=2, ensure_ascii=False)
         except Exception as e:
             raise IOError(f"Failed to save results to {output_path}: {e}")
-    
+
     def get_summary_stats(self) -> dict[str, Any]:
-        """Get summary statistics for the batch processing."""
         return {
             "total_files": self.metadata["total_files_processed"],
             "successful": self.metadata["successful_extractions"],
@@ -95,3 +71,64 @@ class BatchResultFormatter:
                 if self.metadata["total_files_processed"] > 0 else 0
             )
         }
+
+
+class SingleResultFormatter:
+
+    @staticmethod
+    def format_as_json(
+        keywords: list[tuple[str, float]],
+        source_file: str | None = None,
+        source_text: str | None = None,
+        parameters: dict | None = None
+    ) -> str:
+        result = {
+            "metadata": {
+                "timestamp": datetime.now().isoformat(),
+                "source_file": source_file,
+                "processing_parameters": parameters or {}
+            },
+            "keywords": [
+                {"phrase": kw, "score": score} 
+                for kw, score in keywords
+            ]
+        }
+
+        if source_text:
+            result["source_text"] = source_text
+        
+        return json.dumps(result, indent=2, ensure_ascii=False)
+
+    @staticmethod
+    def format_as_csv(keywords: list[tuple[str, float]]) -> str:
+        lines = ["Keyword,Score"]
+        for kw, score in keywords:
+            kw_escaped = kw.replace('"', '""')
+            lines.append(f'"{kw_escaped}",{score:.6f}')
+        return "\n".join(lines)
+
+    @staticmethod
+    def save_to_file(
+        output_path: str | Path,
+        keywords: list[tuple[str, float]],
+        source_file: str | None = None,
+        source_text: str | None = None,
+        parameters: dict | None = None
+    ) -> None:
+        output_path = Path(output_path)
+        ext = output_path.suffix.lower()
+
+        try:
+            if ext == '.json':
+                content = SingleResultFormatter.format_as_json(
+                    keywords, source_file, source_text, parameters
+                )
+            elif ext == '.csv':
+                content = SingleResultFormatter.format_as_csv(keywords)
+            else:
+                raise ValueError(f"Unsupported format: {ext}")
+
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+        except Exception as e:
+            raise IOError(f"Failed to save results to {output_path}: {e}")

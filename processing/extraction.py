@@ -5,7 +5,6 @@ from pathlib import Path
 from PySide6.QtCore import QThread, Signal
 
 class TextExtractorWorker(QThread):
-    """Background thread that extracts text from TXT, PDF, or DOCX."""
 
     text_extracted = Signal(str)
     extraction_error = Signal(str)
@@ -15,7 +14,6 @@ class TextExtractorWorker(QThread):
         super().__init__()
         self.file_path = Path(file_path)
 
-    # ------------------------------
     def run(self) -> None:
         try:
             text = self._extract_from_file(self.file_path)
@@ -25,7 +23,6 @@ class TextExtractorWorker(QThread):
         finally:
             self.finished.emit()
 
-    # Static helpers for each format
     def _extract_from_file(self, path: Path) -> str:
         ext = path.suffix.lower()
         if ext == ".txt":
@@ -45,7 +42,6 @@ class TextExtractorWorker(QThread):
                 continue
         raise ValueError("Could not decode TXT file with common encodings")
 
-    # PDF
     def _extract_pdf(self, path: Path) -> str:
         try:
             import fitz
@@ -60,7 +56,6 @@ class TextExtractorWorker(QThread):
             raise ValueError("No extractable text in PDF")
         return text.strip()
 
-    # DOCX
     def _extract_docx(self, path: Path) -> str:
         try:
             import docx

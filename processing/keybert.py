@@ -20,9 +20,7 @@ class KeywordParams:
     diversity: float = 0.5
     nr_candidates: int = 20
 
-# QThread worker
 class KeywordExtractorWorker(QThread):
-    """Runs KeyBERT extraction in a background thread."""
 
     result = Signal(list)
     error = Signal(str)
@@ -40,7 +38,6 @@ class KeywordExtractorWorker(QThread):
         self.params = KeywordParams(**params)
 
     def run(self) -> None:
-        """Qt entry-point when `start()` is called."""
         try:
             kws = self._extract()
             self.result.emit(kws)
@@ -76,9 +73,7 @@ class KeywordExtractorWorker(QThread):
             top_n=p.top_n,
         )
 
-# High-level processor
 class KeyBERTProcessor:
-    """Wraps KeyBERT and manages default / custom models."""
 
     def __init__(self) -> None:
         self.default_model_name = "all-MiniLM-L12-v2"
@@ -93,7 +88,6 @@ class KeyBERTProcessor:
         self._load_default_model()
         self._update_kw_model(self._default_sentence_model)
 
-    # Public API
     def get_keybert_model(self) -> KeyBERT:
         if self._kw_model is None:
             raise RuntimeError("KeyBERT model not initialized")
@@ -130,7 +124,6 @@ class KeyBERTProcessor:
     def get_default_model_name(self) -> str:
         return self.default_model_name
 
-    # Private helpers
     def _load_default_model(self) -> None:
         self._default_sentence_model = SentenceTransformer(
             self.default_model_name, device=self._device, trust_remote_code=True
