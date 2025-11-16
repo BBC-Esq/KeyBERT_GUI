@@ -1,16 +1,12 @@
-"""
-Core utility functions that do not depend on the GUI.
-"""
 from __future__ import annotations
 
 import os
 import sys
+import json
 import subprocess
 from pathlib import Path
 
-# CUDA helpers
 def is_nvidia_gpu_available() -> bool:
-    """Return True iff `nvidia-smi` is callable."""
     try:
         subprocess.run(
             ["nvidia-smi"],
@@ -24,7 +20,6 @@ def is_nvidia_gpu_available() -> bool:
 
 
 def set_cuda_paths() -> None:
-    """Pre-pend NVIDIA DLL paths shipped with `nvidia` wheels (Windows-only)."""
     venv_base = Path(os.environ.get("VIRTUAL_ENV", Path(sys.executable).parent.parent))
     nvidia_root = venv_base / "Lib" / "site-packages" / "nvidia"
     bin_paths = [
@@ -35,12 +30,10 @@ def set_cuda_paths() -> None:
         nvidia_root / "cuda_nvcc" / "bin",
     ]
     os.environ["PATH"] = os.pathsep.join(str(p) for p in bin_paths) + os.pathsep + os.environ.get("PATH", "")
-    # CUDA_PATH is optional but helps certain libraries
     os.environ.setdefault("CUDA_PATH", str(nvidia_root / "cuda_runtime"))
 
-# Parameter validation
+
 def validate_keyword_params(p: dict) -> list[str]:
-    """Return a list of human-readable error messages (empty if OK)."""
     errors: list[str] = []
 
     min_n, max_n = p["keyphrase_ngram_range"]
@@ -61,28 +54,96 @@ def validate_keyword_params(p: dict) -> list[str]:
 
     return errors
 
-# Batch processing validation
+
 def validate_batch_params(directory: str, output_path: str) -> list[str]:
-    """Validate batch processing parameters."""
     errors: list[str] = []
-    
+
     if not directory.strip():
         errors.append("Please select a directory to process")
     elif not Path(directory).exists():
         errors.append("Selected directory does not exist")
     elif not Path(directory).is_dir():
         errors.append("Selected path is not a directory")
-    
+
     if not output_path.strip():
         errors.append("Please specify an output file path")
     else:
         output_file = Path(output_path)
         if not output_file.suffix.lower() == '.json':
             errors.append("Output file must have .json extension")
-        
-        # Check if output directory exists
+
         output_dir = output_file.parent
         if not output_dir.exists():
             errors.append(f"Output directory does not exist: {output_dir}")
-    
+
     return errors
+
+
+class SettingsManager:
+
+    def __init__(self, app_name: str = "KeyBERT_GUI"):
+        self.app_name = app_name
+        self.settings_file = self._get_settings_path()
+        self.default_settings = {
+            "window_geometry": {
+                "width": 900,
+                "height": 800,
+                "x": None,
+                "y": None
+            },
+            "extraction_params": {
+                "ngram_min": 1,
+                "ngram_max": 2,
+                "stop_words": "",
+                "diversification": "None",
+                "diversity": 0.5,
+                "candidates": 20,
+                "top_n": 5,
+                "use_default_keybert": False
+            },
+            "paths": {
+                "last_file_dir": "",
+                "last_batch_dir": "",
+                "last_batch_output": "",
+                "custom_model_path": ""
+            }
+        }
+
+    def _get_settings_path(self) -> Path:
+        if sys.platform == "win32":
+            base_dir = Path(os.environ.get("APPDATA", Path.home()))
+        elif sys.platform == "darwin":
+            base_dir = Path.home() / "Library" / "Application Support"
+        else:
+            base_dir = Path.home() / ".config"
+
+        app_dir = base_dir / self.app_name
+        app_dir.mkdir(parents=True, exist_ok=True)
+        return app_dir / "settings.json"
+
+    def load_settings(self) -> dict:
+        if not self.settings_file.exists():
+            return self.default_settings.copy()
+
+        try:
+            with open(self.settings_file, 'r', encoding='utf-8') as f:
+                loaded = json.load(f)
+                settings = self.default_settings.copy()
+                self._deep_update(settings, loaded)
+                return settings
+        except Exception:
+            return self.default_settings.copy()
+
+    def save_settings(self, settings: dict) -> None:
+        try:
+            with open(self.settings_file, 'w', encoding='utf-8') as f:
+                json.dump(settings, f, indent=2, ensure_ascii=False)
+        except Exception:
+            pass
+
+    def _deep_update(self, base: dict, updates: dict) -> None:
+        for key, value in updates.items():
+            if key in base and isinstance(base[key], dict) and isinstance(value, dict):
+                self._deep_update(base[key], value)
+            else:
+                base[key] = value
