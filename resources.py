@@ -1,22 +1,16 @@
-"""
-Central place for user-visible strings, tool-tips, etc.
-You can expand this dict later or load it from JSON/YAML if localisation
-becomes necessary.
-"""
-
 TOOLTIPS: dict[str, str] = {
-    # Status labels
     "cuda_status": "CUDA / GPU availability detected at start-up",
     "model_status": "Name of the embedding model currently in use",
 
-    # Buttons & fields
     "load_file_button": "Open a .txt, .pdf or .docx file and extract its text",
+    "cancel_load_button": "Cancel the current file loading operation",
     "custom_model_button": "Choose a custom Sentence-Transformers model directory",
     "text_area": "Paste or edit the document here",
     "extract_button": "Run KeyBERT keyword extraction",
+    "cancel_extract_button": "Cancel the current keyword extraction",
+    "export_button": "Export current results to JSON or CSV file",
     "results_area": "Keywords extracted from the document will appear here",
 
-    # Parameter widgets
     "ngram_range_label": "Minimum and maximum n-gram sizes to consider",
     "ngram_min": "Lower n-gram bound",
     "ngram_max": "Upper n-gram bound",
@@ -30,7 +24,6 @@ TOOLTIPS: dict[str, str] = {
     "top_n_spinbox": "top_n (must be ≥ 1)",
     "default_keybert_checkbox": "Skip embeddings and use KeyBERT in zero-shot mode",
     
-    # Batch processing tooltips
     "batch_toggle_button": "Show/hide batch processing options",
     "batch_directory_button": "Select a directory containing documents to process",
     "batch_directory_label": "Directory containing .txt, .pdf, and .docx files",
