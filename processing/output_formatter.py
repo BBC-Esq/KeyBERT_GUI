@@ -25,20 +25,24 @@ class BatchResultFormatter:
         keywords: list[tuple[str, float]] | None = None,
         error: str | None = None
     ) -> None:
-        result = {
+        result: dict[str, Any] = {
             "file_path": str(file_path),
             "file_name": file_path.name,
             "file_extension": file_path.suffix.lower(),
             "success": error is None,
-            "extracted_text": extracted_text,
-            "keywords": [{"phrase": kw, "score": score} for kw, score in keywords] if keywords else [],
-            "error": error,
+            "keywords": [
+                {"phrase": kw, "score": round(score, 4)}
+                for kw, score in keywords
+            ] if keywords else [],
             "processed_at": datetime.now().isoformat()
         }
 
+        if error is not None:
+            result["error"] = error
+
         self.results.append(result)
         self.metadata["total_files_processed"] += 1
-        
+
         if error is None:
             self.metadata["successful_extractions"] += 1
         else:
@@ -76,27 +80,38 @@ class BatchResultFormatter:
 class SingleResultFormatter:
 
     @staticmethod
+    def _make_serializable(params: dict) -> dict:
+        result = {}
+        for k, v in params.items():
+            if isinstance(v, tuple):
+                result[k] = list(v)
+            else:
+                result[k] = v
+        return result
+
+    @staticmethod
     def format_as_json(
         keywords: list[tuple[str, float]],
         source_file: str | None = None,
         source_text: str | None = None,
         parameters: dict | None = None
     ) -> str:
-        result = {
+        clean_params = SingleResultFormatter._make_serializable(parameters) if parameters else {}
+        result: dict[str, Any] = {
             "metadata": {
                 "timestamp": datetime.now().isoformat(),
                 "source_file": source_file,
-                "processing_parameters": parameters or {}
+                "processing_parameters": clean_params
             },
             "keywords": [
-                {"phrase": kw, "score": score} 
+                {"phrase": kw, "score": round(score, 4)}
                 for kw, score in keywords
             ]
         }
 
         if source_text:
             result["source_text"] = source_text
-        
+
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @staticmethod

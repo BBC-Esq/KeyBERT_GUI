@@ -30,13 +30,15 @@ class BatchProcessorWorker(QThread):
         self.extraction_params = extraction_params
         self.formatter = BatchResultFormatter()
         self._cancelled = False
-    
+        self._extractor = TextExtractorWorker.__new__(TextExtractorWorker)
+
     def cancel(self) -> None:
         self._cancelled = True
 
     def run(self) -> None:
         try:
-            self.formatter.set_processing_parameters(self.extraction_params)
+            serializable_params = self._make_serializable(self.extraction_params)
+            self.formatter.set_processing_parameters(serializable_params)
             total_files = len(self.file_paths)
 
             for i, file_path in enumerate(self.file_paths):
@@ -51,10 +53,10 @@ class BatchProcessorWorker(QThread):
 
                 try:
                     extracted_text = self._extract_text_from_file(file_path)
-                    
+
                     if self._cancelled:
                         break
-                    
+
                     if extracted_text and extracted_text.strip():
                         keywords = self._extract_keywords(extracted_text)
                     else:
@@ -84,85 +86,28 @@ class BatchProcessorWorker(QThread):
             self.error_occurred.emit(f"Batch processing failed: {e}")
 
     def _extract_text_from_file(self, file_path: Path) -> str:
-        ext = file_path.suffix.lower()
-
-        if ext == ".txt":
-            return self._extract_txt(file_path)
-        elif ext == ".pdf":
-            return self._extract_pdf(file_path)
-        elif ext == ".docx":
-            return self._extract_docx(file_path)
-        else:
-            raise ValueError(f"Unsupported file type: {ext}")
-
-    def _extract_txt(self, path: Path) -> str:
-        encodings = ["utf-8", "latin-1", "cp1252", "iso-8859-1"]
-        for enc in encodings:
-            if self._cancelled:
-                raise InterruptedError("Extraction cancelled")
-            try:
-                return path.read_text(encoding=enc)
-            except UnicodeDecodeError:
-                continue
-        raise ValueError("Could not decode TXT file with common encodings")
-
-    def _extract_pdf(self, path: Path) -> str:
-        try:
-            import fitz
-        except ImportError:
-            raise ImportError("Install PyMuPDF: pip install PyMuPDF")
-
-        try:
-            with fitz.open(path) as doc:
-                text_parts = []
-                for page in doc:
-                    if self._cancelled:
-                        raise InterruptedError("Extraction cancelled")
-                    text_parts.append(page.get_text("text"))
-                text = "\n".join(text_parts)
-        except Exception as exc:
-            raise RuntimeError(f"Failed to read PDF: {exc}") from exc
-
-        if not text.strip():
-            raise ValueError("No extractable text in PDF")
-        return text.strip()
-
-    def _extract_docx(self, path: Path) -> str:
-        try:
-            import docx
-        except ImportError:
-            raise ImportError("Install python-docx: pip install python-docx")
-
-        if self._cancelled:
-            raise InterruptedError("Extraction cancelled")
-
-        doc = docx.Document(path)
-        parts = [p.text for p in doc.paragraphs]
-        
-        if self._cancelled:
-            raise InterruptedError("Extraction cancelled")
-        
-        for table in doc.tables:
-            if self._cancelled:
-                raise InterruptedError("Extraction cancelled")
-            for row in table.rows:
-                parts.extend(cell.text for cell in row.cells)
-
-        text = "\n".join(parts)
-        if not text.strip():
-            raise ValueError("No extractable text in DOCX")
-        return text.strip()
+        return self._extractor._extract_from_file(file_path)
 
     def _extract_keywords(self, text: str) -> list[tuple[str, float]]:
         if self._cancelled:
             raise InterruptedError("Extraction cancelled")
-        
+
         params = self.extraction_params.copy()
 
         keybert_params = {
-            k: v for k, v in params.items() 
-            if k in ['keyphrase_ngram_range', 'stop_words', 'top_n', 'use_maxsum', 
+            k: v for k, v in params.items()
+            if k in ['keyphrase_ngram_range', 'stop_words', 'top_n', 'use_maxsum',
                      'use_mmr', 'diversity', 'nr_candidates']
         }
 
         return self.keybert_model.extract_keywords(text, **keybert_params)
+
+    @staticmethod
+    def _make_serializable(params: dict) -> dict:
+        result = {}
+        for k, v in params.items():
+            if isinstance(v, tuple):
+                result[k] = list(v)
+            else:
+                result[k] = v
+        return result

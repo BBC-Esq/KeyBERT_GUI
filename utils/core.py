@@ -134,12 +134,13 @@ class SettingsManager:
         except Exception:
             return self.default_settings.copy()
 
-    def save_settings(self, settings: dict) -> None:
+    def save_settings(self, settings: dict) -> bool:
         try:
             with open(self.settings_file, 'w', encoding='utf-8') as f:
                 json.dump(settings, f, indent=2, ensure_ascii=False)
+            return True
         except Exception:
-            pass
+            return False
 
     def _deep_update(self, base: dict, updates: dict) -> None:
         for key, value in updates.items():

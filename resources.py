@@ -23,7 +23,7 @@ TOOLTIPS: dict[str, str] = {
     "top_n_label": "Number of keywords to return",
     "top_n_spinbox": "top_n (must be ≥ 1)",
     "default_keybert_checkbox": "Skip embeddings and use KeyBERT in zero-shot mode",
-    
+
     "batch_toggle_button": "Show/hide batch processing options",
     "batch_directory_button": "Select a directory containing documents to process",
     "batch_directory_label": "Directory containing .txt, .pdf, and .docx files",

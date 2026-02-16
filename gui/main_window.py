@@ -1,4 +1,5 @@
 from pathlib import Path
+import subprocess
 import sys
 import os
 
@@ -43,7 +44,7 @@ class MainWindow(QMainWindow):
         self.keyword_worker: KeywordExtractorWorker | None = None
         self.batch_worker: BatchProcessorWorker | None = None
         self.scan_worker: DirectoryScanWorker | None = None
-        
+
         self.current_source_file: str | None = None
         self.current_source_text: str | None = None
         self.current_keywords: list[tuple[str, float]] | None = None
@@ -76,12 +77,12 @@ class MainWindow(QMainWindow):
         self.btn_load = QPushButton("Load File (TXT·PDF·DOCX)")
         self.btn_load.setToolTip(TOOLTIPS["load_file_button"])
         self.btn_load.clicked.connect(self._on_load_clicked)
-        
+
         self.btn_cancel_load = QPushButton("Cancel")
         self.btn_cancel_load.setToolTip(TOOLTIPS["cancel_load_button"])
         self.btn_cancel_load.clicked.connect(self._on_cancel_load_clicked)
         self.btn_cancel_load.setVisible(False)
-        
+
         self.btn_select_model = QPushButton("Select custom model dir")
         self.btn_select_model.setToolTip(TOOLTIPS["custom_model_button"])
         self.btn_select_model.clicked.connect(self._on_model_select)
@@ -110,12 +111,12 @@ class MainWindow(QMainWindow):
         )
         self.btn_extract.setToolTip(TOOLTIPS["extract_button"])
         self.btn_extract.clicked.connect(self._on_extract_clicked)
-        
+
         self.btn_cancel_extract = QPushButton("Cancel")
         self.btn_cancel_extract.setToolTip(TOOLTIPS["cancel_extract_button"])
         self.btn_cancel_extract.clicked.connect(self._on_cancel_extract_clicked)
         self.btn_cancel_extract.setVisible(False)
-        
+
         extract_row.addWidget(self.btn_extract)
         extract_row.addWidget(self.btn_cancel_extract)
         extract_row.addStretch()
@@ -125,11 +126,11 @@ class MainWindow(QMainWindow):
 
         results_box = QGroupBox("Extracted keywords / keyphrases")
         results_layout = QVBoxLayout(results_box)
-        
+
         self.txt_results = QTextEdit(readOnly=True)
         self.txt_results.setToolTip(TOOLTIPS["results_area"])
         results_layout.addWidget(self.txt_results)
-        
+
         export_row = QHBoxLayout()
         self.btn_export = QPushButton("Export Results")
         self.btn_export.setToolTip(TOOLTIPS["export_button"])
@@ -138,7 +139,7 @@ class MainWindow(QMainWindow):
         export_row.addWidget(self.btn_export)
         export_row.addStretch()
         results_layout.addLayout(export_row)
-        
+
         root.addWidget(results_box)
 
     def _build_param_group(self, parent_layout: QVBoxLayout) -> None:
@@ -215,46 +216,46 @@ class MainWindow(QMainWindow):
         self.batch_group.setCheckable(True)
         self.batch_group.setChecked(False)
         self.batch_group.setToolTip(TOOLTIPS["batch_toggle_button"])
-        
+
         batch_layout = QVBoxLayout(self.batch_group)
-        
+
         dir_row = QHBoxLayout()
         dir_row.addWidget(QLabel("Directory:"))
-        
+
         self.line_batch_dir = QLineEdit()
         self.line_batch_dir.setPlaceholderText("Select directory containing documents...")
         self.line_batch_dir.setToolTip(TOOLTIPS["batch_directory_label"])
         dir_row.addWidget(self.line_batch_dir)
-        
+
         self.btn_batch_dir = QPushButton("Browse")
         self.btn_batch_dir.setToolTip(TOOLTIPS["batch_directory_button"])
         self.btn_batch_dir.clicked.connect(self._on_batch_dir_clicked)
         dir_row.addWidget(self.btn_batch_dir)
-        
+
         batch_layout.addLayout(dir_row)
-        
+
         self.lbl_file_count = QLabel("No directory selected")
         self.lbl_file_count.setStyleSheet("color: gray; font-style: italic;")
         self.lbl_file_count.setToolTip(TOOLTIPS["batch_file_count_label"])
         batch_layout.addWidget(self.lbl_file_count)
-        
+
         output_row = QHBoxLayout()
         output_row.addWidget(QLabel("Output JSON:"))
-        
+
         self.line_batch_output = QLineEdit()
         self.line_batch_output.setPlaceholderText("Select output file location...")
         self.line_batch_output.setToolTip(TOOLTIPS["batch_output_label"])
         output_row.addWidget(self.line_batch_output)
-        
+
         self.btn_batch_output = QPushButton("Browse")
         self.btn_batch_output.setToolTip(TOOLTIPS["batch_output_button"])
         self.btn_batch_output.clicked.connect(self._on_batch_output_clicked)
         output_row.addWidget(self.btn_batch_output)
-        
+
         batch_layout.addLayout(output_row)
-        
+
         batch_controls = QHBoxLayout()
-        
+
         self.btn_batch_process = QPushButton("Process Directory")
         self.btn_batch_process.setStyleSheet(
             "background-color: lightgreen; font-weight: bold;"
@@ -262,26 +263,26 @@ class MainWindow(QMainWindow):
         self.btn_batch_process.setToolTip(TOOLTIPS["batch_process_button"])
         self.btn_batch_process.clicked.connect(self._on_batch_process_clicked)
         batch_controls.addWidget(self.btn_batch_process)
-        
+
         self.btn_batch_cancel = QPushButton("Cancel")
         self.btn_batch_cancel.setToolTip(TOOLTIPS["batch_cancel_button"])
         self.btn_batch_cancel.clicked.connect(self._on_batch_cancel_clicked)
         self.btn_batch_cancel.setVisible(False)
         batch_controls.addWidget(self.btn_batch_cancel)
-        
+
         batch_controls.addStretch()
         batch_layout.addLayout(batch_controls)
-        
+
         self.batch_progress = QProgressBar()
         self.batch_progress.setVisible(False)
         self.batch_progress.setToolTip(TOOLTIPS["batch_progress_bar"])
         batch_layout.addWidget(self.batch_progress)
-        
+
         self.lbl_batch_status = QLabel()
         self.lbl_batch_status.setVisible(False)
         self.lbl_batch_status.setStyleSheet("color: blue;")
         batch_layout.addWidget(self.lbl_batch_status)
-        
+
         parent_layout.addWidget(self.batch_group)
 
     def _load_settings(self) -> None:
@@ -289,7 +290,7 @@ class MainWindow(QMainWindow):
         self.resize(geom["width"], geom["height"])
         if geom["x"] is not None and geom["y"] is not None:
             self.move(geom["x"], geom["y"])
-        
+
         params = self.settings["extraction_params"]
         self.spin_min.setValue(params["ngram_min"])
         self.spin_max.setValue(params["ngram_max"])
@@ -299,7 +300,7 @@ class MainWindow(QMainWindow):
         self.spin_candidates.setValue(params["candidates"])
         self.spin_top_n.setValue(params["top_n"])
         self.chk_default_kb.setChecked(params["use_default_keybert"])
-        
+
         paths = self.settings["paths"]
         if paths["last_batch_dir"]:
             self.line_batch_dir.setText(paths["last_batch_dir"])
@@ -319,7 +320,7 @@ class MainWindow(QMainWindow):
             "x": self.x(),
             "y": self.y()
         }
-        
+
         self.settings["extraction_params"] = {
             "ngram_min": self.spin_min.value(),
             "ngram_max": self.spin_max.value(),
@@ -330,12 +331,12 @@ class MainWindow(QMainWindow):
             "top_n": self.spin_top_n.value(),
             "use_default_keybert": self.chk_default_kb.isChecked()
         }
-        
+
         self.settings["paths"]["last_batch_dir"] = self.line_batch_dir.text()
         self.settings["paths"]["last_batch_output"] = self.line_batch_output.text()
         if self.processor.has_custom_model():
             self.settings["paths"]["custom_model_path"] = self.processor.get_custom_model_name()
-        
+
         self.settings_manager.save_settings(self.settings)
 
     def _on_load_clicked(self) -> None:
@@ -351,10 +352,10 @@ class MainWindow(QMainWindow):
         )
         if not path:
             return
-        
+
         self.settings["paths"]["last_file_dir"] = str(Path(path).parent)
         self.current_source_file = path
-        
+
         self._set_loading(True, "Extracting text…")
         self.text_worker = TextExtractorWorker(path)
         self.text_worker.text_extracted.connect(self._on_text_extracted)
@@ -425,17 +426,17 @@ class MainWindow(QMainWindow):
         if not self.current_keywords:
             QMessageBox.warning(self, "No results", "No keywords to export.")
             return
-        
+
         file_path, selected_filter = QFileDialog.getSaveFileName(
             self,
             "Export Results",
             "",
             "JSON files (*.json);;CSV files (*.csv);;All files (*)"
         )
-        
+
         if not file_path:
             return
-        
+
         if not Path(file_path).suffix:
             if "JSON" in selected_filter:
                 file_path += ".json"
@@ -443,7 +444,7 @@ class MainWindow(QMainWindow):
                 file_path += ".csv"
             else:
                 file_path += ".json"
-        
+
         try:
             params = self._get_extraction_params()
             SingleResultFormatter.save_to_file(
@@ -468,7 +469,7 @@ class MainWindow(QMainWindow):
         )
         if not dir_path:
             return
-        
+
         self.line_batch_dir.setText(dir_path)
         self.settings["paths"]["last_batch_dir"] = dir_path
         self._update_file_count_display()
@@ -483,28 +484,28 @@ class MainWindow(QMainWindow):
         )
         if not output_path:
             return
-        
+
         if not output_path.lower().endswith('.json'):
             output_path += '.json'
-        
+
         self.line_batch_output.setText(output_path)
         self.settings["paths"]["last_batch_output"] = output_path
 
     def _on_batch_process_clicked(self) -> None:
         directory = self.line_batch_dir.text().strip()
         output_path = self.line_batch_output.text().strip()
-        
+
         errors = validate_batch_params(directory, output_path)
         if errors:
             QMessageBox.critical(self, "Invalid batch parameters", "\n".join(errors))
             return
-        
+
         try:
             files = scan_directory_for_documents(directory)
         except Exception as e:
             QMessageBox.critical(self, "Directory scan error", str(e))
             return
-        
+
         if not files:
             QMessageBox.warning(
                 self, 
@@ -512,28 +513,28 @@ class MainWindow(QMainWindow):
                 "No supported files (.txt, .pdf, .docx) found in the selected directory."
             )
             return
-        
+
         file_counts = get_file_counts_by_type(files)
         count_text = ", ".join(f"{count} {ext}" for ext, count in file_counts.items() if count > 0)
         estimate = estimate_processing_time(len(files))
-        
+
         reply = QMessageBox.question(
             self,
             "Confirm batch processing",
             f"Process {len(files)} files ({count_text})?\n\nEstimated time: {estimate}",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
-        
+
         if reply != QMessageBox.StandardButton.Yes:
             return
-        
+
         self._start_batch_processing(files, output_path)
 
     def _on_batch_cancel_clicked(self) -> None:
         if self.batch_worker and self.batch_worker.isRunning():
             self.batch_worker.cancel()
             self._terminate_worker(self.batch_worker, 5000)
-        
+
         self._set_batch_loading(False)
         self.lbl_batch_status.setText("Batch processing cancelled")
         self.lbl_batch_status.setStyleSheet("color: orange;")
@@ -559,13 +560,13 @@ class MainWindow(QMainWindow):
             self.lbl_file_count.setText("No directory selected")
             self.lbl_file_count.setStyleSheet("color: gray; font-style: italic;")
             return
-        
+
         if self.scan_worker and self.scan_worker.isRunning():
             self._terminate_worker(self.scan_worker, 2000)
-        
+
         self.lbl_file_count.setText("Scanning directory...")
         self.lbl_file_count.setStyleSheet("color: blue; font-style: italic;")
-        
+
         self.scan_worker = DirectoryScanWorker(directory)
         self.scan_worker.scan_completed.connect(self._on_scan_completed)
         self.scan_worker.scan_error.connect(self._on_scan_error)
@@ -619,25 +620,25 @@ class MainWindow(QMainWindow):
                 nr_candidates=20,
                 diversity=0.5,
             )
-        
+
         return params
 
     def _start_batch_processing(self, files: list[Path], output_path: str) -> None:
         params = self._get_extraction_params()
-        
+
         self.batch_worker = BatchProcessorWorker(
             files, Path(output_path), self.processor.get_keybert_model(), params
         )
-        
+
         self.batch_worker.progress_update.connect(self._on_batch_progress_update)
         self.batch_worker.file_completed.connect(self._on_batch_file_completed)
         self.batch_worker.batch_completed.connect(self._on_batch_completed)
         self.batch_worker.error_occurred.connect(self._on_batch_error)
-        
+
         self._set_batch_loading(True)
         self.batch_progress.setMaximum(len(files))
         self.batch_progress.setValue(0)
-        
+
         self.batch_worker.start()
 
     def _set_batch_loading(self, is_loading: bool) -> None:
@@ -645,7 +646,7 @@ class MainWindow(QMainWindow):
         self.btn_batch_cancel.setVisible(is_loading)
         self.batch_progress.setVisible(is_loading)
         self.lbl_batch_status.setVisible(is_loading or bool(self.lbl_batch_status.text()))
-        
+
         self.btn_load.setEnabled(not is_loading)
         self.btn_extract.setEnabled(not is_loading)
 
@@ -659,7 +660,7 @@ class MainWindow(QMainWindow):
 
     def _on_batch_completed(self, output_path: str, summary_stats: dict) -> None:
         self._set_batch_loading(False)
-        
+
         stats = summary_stats
         message = (
             f"Batch processing completed!\n\n"
@@ -669,25 +670,25 @@ class MainWindow(QMainWindow):
             f"Success rate: {stats['success_rate']:.1f}%\n\n"
             f"Results saved to: {output_path}"
         )
-        
+
         self.lbl_batch_status.setText(f"Completed: {stats['successful']}/{stats['total_files']} files")
         self.lbl_batch_status.setStyleSheet("color: green;")
-        
+
         reply = QMessageBox.question(
             self,
             "Batch processing completed",
             message + "\n\nOpen output file location?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
-        
+
         if reply == QMessageBox.StandardButton.Yes:
-            output_dir = Path(output_path).parent
+            output_dir = str(Path(output_path).parent)
             if sys.platform == "win32":
                 os.startfile(output_dir)
             elif sys.platform == "darwin":
-                os.system(f"open '{output_dir}'")
+                subprocess.Popen(["open", output_dir])
             else:
-                os.system(f"xdg-open '{output_dir}'")
+                subprocess.Popen(["xdg-open", output_dir])
 
     def _on_batch_error(self, error_message: str) -> None:
         self._set_batch_loading(False)
@@ -735,13 +736,13 @@ class MainWindow(QMainWindow):
             (self.batch_worker, 5000),
             (self.scan_worker, 2000)
         ]
-        
+
         for worker, timeout in workers:
             if worker and worker.isRunning():
                 if hasattr(worker, 'cancel'):
                     worker.cancel()
                 self._terminate_worker(worker, timeout)
-        
+
         self._save_settings()
         event.accept()
 
@@ -750,6 +751,5 @@ def run_app() -> None:
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
     win = MainWindow()
-    win.resize(900, 800)
     win.show()
     sys.exit(app.exec())
